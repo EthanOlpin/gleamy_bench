@@ -208,44 +208,50 @@ fn format_float(f: Float, decimals: Int) {
   ])
 }
 
-fn header_row(stats: List(Stat)) -> String {
+fn stat_name(stat: Stat) -> String {
+  case stat {
+    P(n) -> "P" <> int.to_string(n)
+    IPS -> "IPS"
+    Min -> "Min"
+    Max -> "Max"
+    Mean -> "Mean"
+    SD -> "SD"
+    SDPercent -> "SD%"
+    Stat(name, _) -> name
+  }
+}
+
+fn table_header_row(stats: List(Stat)) -> String {
   [
     string.pad_right("Input", name_pad, " "),
     string.pad_right("Function", name_pad, " "),
     ..list.map(stats, fn(stat) {
-      let stat = case stat {
-        P(n) -> "P" <> int.to_string(n)
-        IPS -> "IPS"
-        Min -> "Min"
-        Max -> "Max"
-        Mean -> "Mean"
-        SD -> "SD"
-        SDPercent -> "SD%"
-        Stat(name, _) -> name
-      }
-      string.pad_left(stat, stat_pad, " ")
+      let name = stat_name(stat)
+      string.pad_left(name, stat_pad, " ")
     })
   ]
   |> string.join("")
 }
 
-fn stat_row(set: Set, stats: List(Stat), options: Options) -> String {
+fn calculate_stat(stat: Stat, set: Set) -> Float {
+  case stat {
+    P(n) -> percentile(n, set.reps)
+    IPS -> 1000.0 *. int.to_float(list.length(set.reps)) /. float.sum(set.reps)
+    Min -> min(set.reps)
+    Max -> max(set.reps)
+    Mean -> mean(set.reps)
+    SD -> standard_deviation(set.reps)
+    SDPercent -> 100.0 *. standard_deviation(set.reps) /. mean(set.reps)
+    Stat(_, calc) -> calc(set)
+  }
+}
+
+fn table_row(set: Set, stats: List(Stat), options: Options) -> String {
   [
     string.pad_right(set.input, name_pad, " "),
     string.pad_right(set.function, name_pad, " "),
     ..list.map(stats, fn(stat) {
-      let stat = case stat {
-        P(n) -> percentile(n, set.reps)
-        IPS ->
-          1000.0 *. int.to_float(list.length(set.reps)) /. float.sum(set.reps)
-        Min -> min(set.reps)
-        Max -> max(set.reps)
-        Mean -> mean(set.reps)
-        SD -> standard_deviation(set.reps)
-        SDPercent -> 100.0 *. standard_deviation(set.reps) /. mean(set.reps)
-        Stat(_, calc) -> calc(set)
-      }
-      stat
+      calculate_stat(stat, set)
       |> format_float(options.decimals)
       |> string.pad_left(stat_pad, " ")
     })
@@ -254,8 +260,31 @@ fn stat_row(set: Set, stats: List(Stat), options: Options) -> String {
 }
 
 pub fn table(result: BenchResults, stats: List(Stat)) -> String {
-  let header = header_row(stats)
-  let body = list.map(result.sets, stat_row(_, stats, result.options))
+  let header = table_header_row(stats)
+  let body = list.map(result.sets, table_row(_, stats, result.options))
+  [header, ..body]
+  |> string.join("\n")
+}
+
+fn csv_header_row(stats: List(Stat)) -> String {
+  ["Input", "Function", ..list.map(stats, stat_name)]
+  |> string.join(",")
+}
+
+fn csv_row(set: Set, stats: List(Stat), options: Options) -> String {
+  [
+    set.input,
+    set.function,
+    ..list.map(stats, fn(stat) {
+      calculate_stat(stat, set) |> format_float(options.decimals)
+    })
+  ]
+  |> string.join(",")
+}
+
+pub fn csv(result: BenchResults, stats: List(Stat)) -> String {
+  let header = csv_header_row(stats)
+  let body = list.map(result.sets, csv_row(_, stats, result.options))
   [header, ..body]
   |> string.join("\n")
 }
