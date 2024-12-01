@@ -31,11 +31,12 @@ pub fn bench_run_test() {
   |> bench.table([bench.IPS, bench.Min, bench.P(99)])
   |> should.equal(
     "Input               Function                       IPS           Min           P99
-10ms                sleep1                         99.0           10.0           10.0
-10ms                sleep2                         99.0           10.0           10.0
-10ms                sleep3                         99.0           10.0           10.0
-20ms                sleep1                         49.0           20.0           20.0
-20ms                sleep2                         49.0           20.0           20.0
-20ms                sleep3                         49.0           20.0           20.0",
+10ms                sleep1                        99.0          10.0          10.0
+10ms                sleep2                        99.0          10.0          10.0
+10ms                sleep3                        99.0          10.0          10.0
+20ms                sleep1                        49.0          20.0          20.0
+20ms                sleep2                        49.0          20.0          20.0
+20ms                sleep3                        49.0          20.0          20.0",
+  )
   )
 }

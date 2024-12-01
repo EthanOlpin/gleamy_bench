@@ -202,7 +202,7 @@ fn format_float(f: Float, decimals: Int) {
   let whole = float.truncate(f)
   let decimal = float.truncate(f *. factor) - whole * float.truncate(factor)
   string.concat([
-    string.pad_left(int.to_string(whole), stat_pad - decimals - 1, " "),
+    int.to_string(whole),
     ".",
     string.pad_left(int.to_string(decimal), decimals, "0"),
   ])
